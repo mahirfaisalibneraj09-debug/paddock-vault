@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paddock Vault</title>
+<meta name="description" content="">
+<meta name="theme-color" content="#15151E">
+<meta property="og:title" content="">
+<meta property="og:description" content="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  if (window.tailwind) tailwind.config = {
+    theme: { extend: {
+      colors: { carbon: '#15151E', f1: '#E10600' },
+      fontFamily: { sans: ['"Titillium Web"', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'] }
+    } }
+  };
+</script>
+
+<!--
+  PADDOCK VAULT v2 — League history template
+  Edit the CONFIG object near the bottom of this file. See README.md for the full guide.
+  This file uses no localStorage, sessionStorage, cookies or parent-frame access:
+  all state lives in memory, so it runs safely inside sandboxed previews and iframes.
+-->
+
+<style>
+  :root{
+    --bg:#15151E; --accent:#E10600; --accent-rgb:225,6,0;
+    --line:rgba(255,255,255,.09); --muted:#9c9cab; --text:#f3f3f6;
+    --font:"Titillium Web",system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color-scheme:dark;
+  }
+  *,*::before,*::after{ -webkit-tap-highlight-color:transparent; }
+  [hidden]{ display:none !important; }
+  html{ -webkit-text-size-adjust:100%; scroll-padding-top:env(safe-area-inset-top,0px); }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font); line-height:1.5;
+        padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); overflow-x:hidden; }
+  body.lock{ overflow:hidden; }
+  :focus-visible{ outline:2px solid #fff; outline-offset:3px; border-radius:10px; }
+
+  .bg{ position:fixed; inset:0; z-index:-1; pointer-events:none; background:
+      radial-gradient(900px 520px at 90% -8%, rgba(var(--accent-rgb),.18), transparent 62%),
+      radial-gradient(700px 500px at -10% 110%, rgba(var(--accent-rgb),.08), transparent 60%),
+      repeating-linear-gradient(45deg, rgba(255,255,255,.018) 0 2px, transparent 2px 6px),
+      repeating-linear-gradient(-45deg, rgba(0,0,0,.35) 0 2px, transparent 2px 6px), var(--bg); }
+  .glass{ background:linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.02)); border:1px solid var(--line);
+          -webkit-backdrop-filter:blur(14px) saturate(140%); backdrop-filter:blur(14px) saturate(140%); }
+  .muted{ color:var(--muted); }
+
+  /* Intro */
+  #intro{ position:fixed; inset:0; z-index:100; background:#000; display:grid; place-items:center; cursor:pointer; transition:opacity .6s ease .1s, visibility .6s ease .1s; }
+  #intro.done{ opacity:0; visibility:hidden; }
+  .gantry{ display:flex; gap:clamp(6px,2.4vw,16px); padding:14px; background:#0b0b0d; border:1px solid #222; border-radius:16px; }
+  .pod{ display:flex; flex-direction:column; gap:8px; padding:8px; background:#030303; border-radius:12px; }
+  .lamp{ width:clamp(30px,10vw,54px); aspect-ratio:1; border-radius:50%; background:#1d0505; box-shadow:inset 0 0 10px #000; transition:background .06s, box-shadow .06s; }
+  .pod.on .lamp{ background:#ff1b0d; box-shadow:0 0 22px #ff1b0d, 0 0 60px rgba(255,27,13,.55), inset 0 -5px 10px rgba(0,0,0,.35); }
+  #intro-text{ margin-top:28px; font-weight:700; font-size:clamp(18px,4.6vw,26px); text-align:center; opacity:0; transform:translateY(8px); transition:opacity .35s, transform .35s; }
+  #intro-text.show{ opacity:1; transform:none; }
+
+  /* Header + nav pills */
+  .brand-mark{ width:34px; height:22px; flex:none; background:var(--accent); transform:skewX(-20deg); border-radius:3px; box-shadow:0 0 18px rgba(var(--accent-rgb),.55); }
+  .meta-pill{ display:inline-flex; align-items:baseline; gap:6px; padding:6px 12px; border-radius:999px; font-size:14px; color:var(--muted); background:rgba(0,0,0,.35); border:1px solid var(--line); }
+  .meta-pill b{ color:#fff; font-weight:700; }
+  .nav-pill{ display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; font-size:14px; font-weight:700; white-space:nowrap;
+             background:rgba(var(--accent-rgb),.12); border:1px solid rgba(var(--accent-rgb),.45); color:#fff; transition:box-shadow .3s, background .3s, transform .2s; }
+  .nav-pill i{ color:var(--accent); filter:brightness(1.3); }
+  .nav-pill:hover{ background:rgba(var(--accent-rgb),.22); box-shadow:0 0 22px rgba(var(--accent-rgb),.45); }
+  .nav-pill:active{ transform:scale(.96); }
+
+  /* Tabs */
+  .tabs{ position:relative; display:grid; grid-template-columns:repeat(3,1fr); padding:4px; border-radius:999px; max-width:36rem; }
+  .tab-ind{ position:absolute; top:4px; bottom:4px; left:4px; width:calc((100% - 8px) / 3); border-radius:999px; background:var(--accent);
+            box-shadow:0 0 22px rgba(var(--accent-rgb),.55), inset 0 1px 0 rgba(255,255,255,.25); transition:transform .5s cubic-bezier(.65,0,.35,1); }
+  .tab{ position:relative; z-index:1; padding:11px 6px; font-weight:700; font-size:clamp(13px,3.6vw,15px); color:#b8b8c6; border-radius:999px; transition:color .3s; white-space:nowrap; }
+  .tab[aria-selected="true"]{ color:#fff; }
+
+  /* Story rail — touch + mouse drag, hidden scrollbar, glowing active ring */
+  .rail{ display:flex; gap:14px; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch;
+         scroll-snap-type:x proximity; scroll-behavior:smooth; padding:10px 6px 12px; margin-top:12px; cursor:grab;
+         scrollbar-width:none; -ms-overflow-style:none; touch-action:pan-x pan-y;
+         -webkit-mask-image:linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+         mask-image:linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
+  .rail::-webkit-scrollbar{ display:none; width:0; height:0; }
+  .rail.dragging{ cursor:grabbing; scroll-snap-type:none; scroll-behavior:auto; user-select:none; }
+  .bubble{ flex:none; scroll-snap-align:center; display:flex; flex-direction:column; align-items:center; gap:7px; width:82px; padding:4px 0; border-radius:16px; }
+  .ring{ width:76px; height:76px; border-radius:50%; padding:3px; background:conic-gradient(from 210deg, var(--accent), #ff7a5c, #ffc2b3, var(--accent));
+         transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; }
+  .ring.seen{ background:#3b3b48; }
+  .ring-inner{ width:100%; height:100%; border-radius:50%; background:#000; border:3px solid var(--bg); display:grid; place-items:center; font-weight:900; font-size:19px; letter-spacing:-.02em; }
+  .bubble[aria-selected="true"] .ring{ background:var(--accent); transform:scale(1.08);
+         box-shadow:0 0 0 2px rgba(var(--accent-rgb),.35), 0 0 18px rgba(var(--accent-rgb),.85), 0 0 42px rgba(var(--accent-rgb),.45); animation:pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse{ 50%{ box-shadow:0 0 0 4px rgba(var(--accent-rgb),.2), 0 0 26px rgba(var(--accent-rgb),.95), 0 0 56px rgba(var(--accent-rgb),.5); } }
+  .bubble:active .ring{ transform:scale(.94); }
+  .bubble-label{ font-size:13px; line-height:1.15; color:#c9c9d4; text-align:center; }
+  .bubble[aria-selected="true"] .bubble-label{ color:#fff; font-weight:700; }
+  @media (hover:hover){ .bubble:hover .ring{ transform:scale(1.05); } }
+
+  /* Chapter detail */
+  .ghost{ position:absolute; right:-.04em; top:-.16em; font-size:clamp(120px,32vw,280px); font-weight:700; font-style:italic; line-height:1; letter-spacing:-.05em;
+          color:transparent; -webkit-text-stroke:1.5px rgba(255,255,255,.08); pointer-events:none; user-select:none; }
+  .pill{ padding:3px 10px; border-radius:999px; background:var(--accent); color:#fff; font-weight:700; box-shadow:0 0 14px rgba(var(--accent-rgb),.55); font-size:14px; }
+  .chip{ display:inline-flex; flex-direction:column; gap:2px; padding:10px 14px; border-radius:14px; background:rgba(0,0,0,.42); border:1px solid var(--line); font-size:15px; line-height:1.3; }
+  .chip small{ color:var(--muted); font-size:13px; }
+  .stat{ padding:16px; border-radius:18px; background:rgba(0,0,0,.4); border:1px solid var(--line); }
+  .stat-v{ font-size:clamp(28px,7vw,42px); font-weight:900; line-height:1; letter-spacing:-.02em; color:#fff; text-shadow:0 0 22px rgba(var(--accent-rgb),.45); overflow-wrap:anywhere; }
+  .stat-l{ margin-top:8px; font-size:14px; line-height:1.4; color:#c4c4cf; }
+  .list{ list-style:none; padding:0; margin:0; display:grid; gap:2px; }
+  .list li{ display:grid; grid-template-columns:56px 1fr; gap:10px; padding:8px 4px; border-bottom:1px solid rgba(255,255,255,.06); font-size:15px; }
+  .list li span:first-child{ color:var(--accent); font-weight:700; font-variant-numeric:tabular-nums; filter:brightness(1.25); }
+  .fact{ border-left:3px solid var(--accent); background:linear-gradient(90deg, rgba(var(--accent-rgb),.14), transparent 80%); padding:14px 16px; border-radius:4px 16px 16px 4px; font-size:15px; line-height:1.55; }
+  .fact strong{ display:block; font-size:13px; color:#ff9a90; margin-bottom:4px; }
+
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px; border-radius:999px; font-weight:700; font-size:14px;
+        border:1px solid var(--line); background:rgba(255,255,255,.05); color:#fff; transition:background .25s, box-shadow .25s, transform .2s, opacity .2s; }
+  .btn:hover{ background:rgba(255,255,255,.1); }
+  .btn:active{ transform:scale(.97); }
+  .btn:disabled{ opacity:.35; pointer-events:none; }
+  .btn-accent{ background:var(--accent); border-color:var(--accent); }
+  .btn-accent:hover{ background:var(--accent); filter:brightness(1.12); box-shadow:0 0 26px rgba(var(--accent-rgb),.55); }
+
+  /* Newsletter */
+  .cta{ position:relative; overflow:hidden; border-radius:26px; }
+  .cta::before{ content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(500px 220px at 100% 0%, rgba(var(--accent-rgb),.28), transparent 70%); }
+  .field{ display:flex; align-items:center; gap:10px; padding:0 14px; height:48px; border-radius:999px; background:rgba(0,0,0,.5); border:1px solid var(--line); transition:border-color .25s, box-shadow .25s; }
+  .field:focus-within{ border-color:rgba(var(--accent-rgb),.7); box-shadow:0 0 0 3px rgba(var(--accent-rgb),.18); }
+  .field input{ flex:1; min-width:0; background:transparent; border:0; outline:0; color:#fff; font-size:16px; font-family:var(--font); }
+  .field input::placeholder{ color:#6f6f7d; }
+  .field i{ color:var(--muted); }
+  .field input[type="search"]::-webkit-search-cancel-button{ display:none; }
+  .field-error{ min-height:20px; font-size:13px; color:#ff9a90; margin-top:6px; }
+
+  /* Cards with cursor glow */
+  .spot{ position:relative; isolation:isolate; transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s, border-color .35s; }
+  .spot::after{ content:""; position:absolute; inset:-1px; border-radius:inherit; padding:1px; pointer-events:none;
+    background:radial-gradient(240px circle at var(--x,50%) var(--y,0%), rgba(var(--accent-rgb),1), rgba(var(--accent-rgb),.25) 40%, transparent 70%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; opacity:0; transition:opacity .35s; }
+  .spot:focus-visible::after{ opacity:1; }
+  @media (hover:hover){
+    .spot:hover{ transform:translateY(-4px); box-shadow:0 20px 50px -20px rgba(var(--accent-rgb),.6); border-color:rgba(var(--accent-rgb),.35); }
+    .spot:hover::after{ opacity:1; }
+  }
+  .person{ text-align:left; border-radius:24px; padding:18px; display:flex; flex-direction:column; gap:14px; min-height:200px; }
+  .helmet{ position:relative; flex:none; width:48px; height:44px; border-radius:50% 50% 42% 42% / 58% 58% 42% 42%;
+           background:linear-gradient(165deg, var(--c1) 0 50%, var(--c2) 50% 64%, var(--c1) 64%); box-shadow:inset -5px -7px 12px rgba(0,0,0,.38), 0 6px 16px rgba(0,0,0,.5); }
+  .helmet::after{ content:""; position:absolute; right:-2px; top:36%; width:62%; height:27%; border-radius:12px 4px 4px 12px; background:linear-gradient(180deg,#2a2a2a,#000); box-shadow:inset 0 2px 0 rgba(255,255,255,.18); }
+  .helmet.lg{ width:72px; height:66px; }
+  .first{ display:block; font-size:15px; color:var(--muted); line-height:1.2; }
+  .last{ display:block; font-size:28px; font-weight:900; line-height:1.05; letter-spacing:-.02em; }
+  .pips{ display:flex; flex-wrap:wrap; gap:4px; min-height:5px; }
+  .pips i{ width:14px; height:5px; border-radius:2px; background:var(--accent); box-shadow:0 0 8px rgba(var(--accent-rgb),.55); transform:skewX(-20deg); }
+  .mini{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:100%; }
+  .mini div{ font-size:12px; color:var(--muted); line-height:1.25; }
+  .mini b{ display:block; font-size:19px; color:#fff; font-weight:700; }
+  .sort-btn{ padding:7px 14px; border-radius:999px; font-size:14px; font-weight:600; color:#c4c4cf; border:1px solid var(--line); transition:background .25s, color .25s, border-color .25s; }
+  .sort-btn[aria-pressed="true"]{ background:#fff; color:#000; border-color:#fff; }
+  mark{ background:rgba(var(--accent-rgb),.35); color:#fff; border-radius:3px; padding:0 1px; }
+
+  /* Rivalries */
+  .heat{ display:flex; gap:3px; align-items:center; }
+  .heat i{ width:7px; height:14px; border-radius:2px; background:rgba(255,255,255,.12); transform:skewX(-18deg); }
+  .heat i.on{ background:var(--accent); box-shadow:0 0 8px rgba(var(--accent-rgb),.55); }
+  .vs{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:end; gap:10px; margin-top:20px; }
+  .vs-name{ font-size:clamp(24px,6vw,40px); font-weight:900; line-height:.95; letter-spacing:-.02em; overflow-wrap:break-word; hyphens:auto; }
+  @media (min-width:1024px){ .vs-name{ font-size:clamp(24px,2.6vw,36px); } }
+  .vs-badge{ font-weight:700; font-style:italic; color:var(--accent); font-size:20px; padding-bottom:4px; filter:brightness(1.2); }
+  .tug{ display:grid; grid-template-columns:56px 1fr 56px; align-items:center; gap:10px; }
+  .tug-label{ grid-column:1 / -1; text-align:center; font-size:13px; color:var(--muted); margin-bottom:-4px; }
+  .tug-val{ font-weight:700; font-variant-numeric:tabular-nums; font-size:16px; color:#cfcfd8; }
+  .tug-val.win{ color:#fff; }
+  .tug-bar{ display:flex; height:8px; border-radius:99px; overflow:hidden; background:rgba(255,255,255,.08); }
+  .tug-bar .l{ background:var(--accent); box-shadow:0 0 10px rgba(var(--accent-rgb),.55); transition:width 1s cubic-bezier(.2,.8,.2,1); }
+  .tug-bar .r{ background:#e6e6ee; transition:width 1s cubic-bezier(.2,.8,.2,1); }
+  .note h4{ font-size:13px; color:#ff9a90; font-weight:700; margin:0 0 4px; }
+  .note p{ margin:0; font-size:15px; line-height:1.55; color:#d6d6de; }
+
+  /* Toast */
+  .toast{ position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom,0px)); z-index:120; display:flex; align-items:center; gap:10px;
+          padding:12px 18px; border-radius:999px; background:rgba(10,10,14,.92); border:1px solid rgba(var(--accent-rgb),.5); color:#fff; font-weight:600; font-size:15px;
+          box-shadow:0 12px 40px -10px rgba(0,0,0,.8), 0 0 24px rgba(var(--accent-rgb),.35); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+          transform:translate(-50%, 24px); opacity:0; pointer-events:none; transition:transform .35s cubic-bezier(.2,.8,.2,1), opacity .25s; max-width:calc(100vw - 32px); }
+  .toast.show{ transform:translate(-50%,0); opacity:1; }
+  .toast i{ color:var(--accent); filter:brightness(1.3); }
+
+  /* Motion */
+  @keyframes rise{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+  .rise{ animation:rise .6s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i,0) * 55ms); }
+
+  /* Modals */
+  .modal{ position:fixed; inset:0; z-index:60; display:none; }
+  .modal.show{ display:block; }
+  .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.62); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); opacity:0; transition:opacity .35s; }
+  .modal.open .backdrop{ opacity:1; }
+  .sheet{ position:absolute; left:0; right:0; bottom:0; max-height:88vh; overflow-y:auto; overscroll-behavior:contain; border-radius:28px 28px 0 0;
+          background:rgba(21,21,30,.95); border:1px solid var(--line); padding:12px 20px calc(24px + env(safe-area-inset-bottom,0px));
+          transform:translateY(100%); transition:transform .45s cubic-bezier(.2,.8,.2,1); }
+  .modal.open .sheet{ transform:none; }
+  .handle{ width:44px; height:5px; border-radius:99px; background:rgba(255,255,255,.25); margin:0 auto 14px; }
+  @media (min-width:768px){
+    .sheet{ left:50%; right:auto; bottom:auto; top:50%; width:min(640px,92vw); border-radius:28px; padding:28px; opacity:0; transform:translate(-50%,-46%) scale(.97); transition:transform .4s cubic-bezier(.2,.8,.2,1), opacity .3s; }
+    .modal.open .sheet{ opacity:1; transform:translate(-50%,-50%); }
+    .handle{ display:none; }
+  }
+  .quote{ position:relative; padding:18px 18px 18px 22px; border-radius:18px; background:rgba(0,0,0,.45); border:1px solid var(--line); margin-top:24px; }
+  .quote::before{ content:"“"; position:absolute; left:12px; top:-14px; font-size:64px; font-weight:900; color:var(--accent); line-height:1; }
+  .quote p{ margin:0; font-size:18px; line-height:1.45; font-weight:600; }
+  .quote small{ display:block; margin-top:8px; color:var(--muted); font-size:13px; }
+  .tag{ display:inline-block; padding:5px 10px; border-radius:10px; font-size:13px; background:rgba(255,255,255,.06); border:1px solid var(--line); }
+  .tag.hot{ background:rgba(var(--accent-rgb),.18); border-color:rgba(var(--accent-rgb),.45); color:#fff; font-weight:700; }
+  .x{ width:40px; height:40px; flex:none; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.08); border:1px solid var(--line); font-size:16px; line-height:1; }
+
+  .story{ position:absolute; inset:0; overflow:hidden; display:flex; flex-direction:column; background:#000;
+          padding:calc(10px + env(safe-area-inset-top,0px)) 16px calc(18px + env(safe-area-inset-bottom,0px));
+          opacity:0; transform:scale(.95); transition:transform .4s cubic-bezier(.2,.8,.2,1), opacity .3s; }
+  #story-modal.open .story{ opacity:1; transform:none; }
+  @media (min-width:640px){
+    .story{ inset:auto; left:50%; top:50%; width:min(420px,92vw); height:min(780px,92vh); border-radius:26px; border:1px solid var(--line); transform:translate(-50%,-50%) scale(.95); padding:14px 18px 20px; }
+    #story-modal.open .story{ transform:translate(-50%,-50%); }
+  }
+  .story-glow{ position:absolute; inset:0; pointer-events:none; background:radial-gradient(120% 70% at 100% 0%, rgba(var(--accent-rgb),.42), transparent 60%), radial-gradient(90% 60% at 0% 100%, rgba(var(--accent-rgb),.16), transparent 60%); }
+  .bars{ position:relative; display:flex; gap:4px; }
+  .bar{ flex:1; height:3px; border-radius:3px; background:rgba(255,255,255,.25); overflow:hidden; }
+  .bar i{ display:block; height:100%; width:0; background:#fff; }
+  .stage{ position:relative; flex:1; display:flex; flex-direction:column; justify-content:flex-end; touch-action:none; user-select:none; -webkit-user-select:none; cursor:pointer; }
+  .stage .ghost{ top:2%; font-size:clamp(130px,42vw,200px); -webkit-text-stroke:1.5px rgba(255,255,255,.13); }
+  .paused-hint{ position:absolute; top:44px; left:50%; transform:translateX(-50%); font-size:13px; padding:4px 10px; border-radius:99px; background:rgba(0,0,0,.6); opacity:0; transition:opacity .2s; pointer-events:none; }
+  .story.paused .paused-hint{ opacity:1; }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{ animation-duration:.01ms !important; animation-delay:0ms !important; transition-duration:.01ms !important; }
+    .rail{ scroll-behavior:auto; }
+  }
+</style>
+</head>
+<body class="antialiased">
+<div class="bg" aria-hidden="true"></div>
+
+<!-- Starting-lights intro -->
+<div id="intro" role="presentation">
+  <div>
+    <div class="gantry" aria-hidden="true">
+      <div class="pod"><span class="lamp"></span><span class="lamp"></span></div>
+      <div class="pod"><span class="lamp"></span><span class="lamp"></span></div>
+      <div class="pod"><span class="lamp"></span><span class="lamp"></span></div>
+      <div class="pod"><span class="lamp"></span><span class="lamp"></span></div>
+      <div class="pod"><span class="lamp"></span><span class="lamp"></span></div>
+    </div>
+    <p id="intro-text"></p>
+    <p class="mt-3 text-center text-[13px] text-zinc-500" id="intro-skip"></p>
+  </div>
+</div>
+
+<div class="mx-auto w-full max-w-6xl px-4 sm:px-6 pb-16">
+  <!-- Header / top navigation -->
+  <header class="pt-6 sm:pt-10">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <h1 class="text-[26px] sm:text-[40px] font-black leading-none tracking-tight truncate" id="site-name"></h1>
+      </div>
+      <nav class="flex items-center gap-2 shrink-0" id="nav-links" aria-label="Support"></nav>
+    </div>
+    <p class="mt-2 text-[17px] sm:text-[19px] text-zinc-300 max-w-xl" id="site-tagline"></p>
+    <div class="mt-4 flex flex-wrap gap-2" id="header-stats"></div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="sticky z-30 -mx-4 sm:mx-0 px-4 sm:px-0 pt-5 pb-3" style="top:env(safe-area-inset-top,0px)">
+    <div class="tabs glass" role="tablist" aria-label="Sections">
+      <span class="tab-ind" id="tab-ind" aria-hidden="true"></span>
+      <button class="tab" role="tab" id="tab-0" aria-controls="panel-0" aria-selected="true"></button>
+      <button class="tab" role="tab" id="tab-1" aria-controls="panel-1" aria-selected="false"></button>
+      <button class="tab" role="tab" id="tab-2" aria-controls="panel-2" aria-selected="false"></button>
+    </div>
+  </div>
+
+  <main id="panels">
+    <!-- Chapters -->
+    <section id="panel-0" role="tabpanel" aria-labelledby="tab-0">
+      <div class="flex items-center justify-between gap-3 mt-1">
+        <p class="text-[15px] text-zinc-400" id="chapters-hint"></p>
+        <button class="btn btn-accent shrink-0" id="play-all"><i class="fa-solid fa-play text-[12px]" aria-hidden="true"></i><span id="play-all-label"></span></button>
+      </div>
+      <div class="rail" id="rail" role="tablist" aria-label="Chapters"></div>
+      <div id="chapter" class="mt-4" aria-live="polite"></div>
+      <div id="newsletter" class="mt-5"></div>
+    </section>
+
+    <!-- Hall of fame -->
+    <section id="panel-1" role="tabpanel" aria-labelledby="tab-1" hidden>
+      <div class="flex flex-wrap items-end justify-between gap-3 mt-1">
+        <div>
+          <h2 class="text-[26px] sm:text-[32px] font-black leading-tight" id="people-title"></h2>
+          <p class="text-[15px] text-zinc-400" id="people-intro"></p>
+        </div>
+        <div class="flex gap-2" role="group" aria-label="Sort">
+          <button class="sort-btn" data-sort="debut" aria-pressed="true" id="sort-debut"></button>
+          <button class="sort-btn" data-sort="honours" aria-pressed="false" id="sort-honours"></button>
+        </div>
+      </div>
+      <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+        <label class="field glass w-full sm:max-w-md" for="people-search">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input id="people-search" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search">
+          <button id="search-clear" type="button" class="w-7 h-7 grid place-items-center rounded-full bg-white/10 text-[12px]" hidden><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        </label>
+        <p class="text-[14px] text-zinc-400" id="people-count" aria-live="polite"></p>
+      </div>
+      <div id="people" class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+      <div id="people-empty" class="mt-6 glass rounded-[24px] p-8 text-center" hidden>
+        <i class="fa-solid fa-flag-checkered text-[28px] text-zinc-500" aria-hidden="true"></i>
+        <p class="mt-3 text-[17px] font-bold" id="people-empty-title"></p>
+        <button class="btn mt-4" id="people-empty-clear"></button>
+      </div>
+    </section>
+
+    <!-- Rivalries -->
+    <section id="panel-2" role="tabpanel" aria-labelledby="tab-2" hidden>
+      <h2 class="text-[26px] sm:text-[32px] font-black leading-tight mt-1" id="riv-title"></h2>
+      <p class="text-[15px] text-zinc-400" id="riv-intro"></p>
+      <div id="rivalries" class="mt-5 grid gap-5 lg:grid-cols-2"></div>
+    </section>
+  </main>
+
+  <footer class="mt-14 pt-6 border-t border-white/10 text-[13px] text-zinc-500 leading-relaxed" id="footer"></footer>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast" role="status" aria-live="polite"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span id="toast-text"></span></div>
+
+<!-- Driver sheet -->
+<div id="sheet-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="backdrop" data-close></div>
+  <div class="sheet" id="sheet"><div class="handle" aria-hidden="true"></div><div id="sheet-body"></div></div>
+</div>
+
+<!-- Story viewer -->
+<div id="story-modal" class="modal" role="dialog" aria-modal="true" aria-label="Stories">
+  <div class="backdrop" data-close></div>
+  <div class="story" id="story">
+    <div class="story-glow" aria-hidden="true"></div>
+    <div class="bars" id="bars"></div>
+    <div class="relative flex items-center gap-3 mt-3">
+      <span class="ring" style="width:36px;height:36px;padding:2px"><span class="ring-inner" id="story-short" style="font-size:11px;border-width:2px"></span></span>
+      <div class="leading-tight"><p class="font-bold text-[15px]" id="story-label"></p><p class="text-[13px] text-zinc-400" id="story-years"></p></div>
+      <button class="x ml-auto" id="story-close" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    </div>
+    <span class="paused-hint" id="paused-hint"></span>
+    <div class="stage" id="stage"></div>
+  </div>
+</div>
+
+<script>
+/* ======================================================================
+   CONFIG — EDIT EVERYTHING HERE
+   The demo below is a FICTIONAL sim racing league. Replace it with yours.
+   ====================================================================== */
+const CONFIG = {
+  site: {
+    name: "Paddock Vault",
+    tagline: "Ten seasons of the Apex Sim Racing League: the chapters, the champions and the grudges.",
+    footer: "Apex Sim Racing League is a fictional league used as demo content. Built with Paddock Vault."
+  },
+
+  theme: { accent: "#E10600", background: "#15151E" },
+
+  intro: { enabled: true, text: "Lights out and away we go", skipText: "Tap to skip" },
+
+  /* Pills in the top navigation. Put your Buy Me a Coffee, Ko-fi, Patreon or merch store link in `url`.
+     `shortLabel` is shown on phones. Set `mobile:false` to hide a pill on small screens. */
+  navLinks: [
+    { label: "Buy me a coffee", shortLabel: "Support", icon: "fa-solid fa-mug-hot", url: "", mobile: true },
+    { label: "Official merch", shortLabel: "Merch", icon: "fa-solid fa-shirt", url: "", mobile: false }
+  ],
+
+  /* Newsletter card under the chapter view.
+     Leave `formAction` empty for demo mode (nothing is sent anywhere).
+     To collect real signups, paste the form URL from your email provider (e.g. Buttondown, Mailchimp, Formspree);
+     the email is posted in a field named by `fieldName`, opening in a new tab. */
+  newsletter: {
+    enabled: true,
+    title: "Join the paddock",
+    text: "Race reports, new seasons and hall-of-fame inductions, straight to your inbox.",
+    placeholder: "you@example.com",
+    button: "Subscribe",
+    success: "You’re on the list!",
+    successNote: "Thanks for joining. Watch your inbox for the next race report.",
+    invalid: "Enter a valid email address.",
+    formAction: "",
+    fieldName: "email"
+  },
+
+  headerStats: [
+    { value: "10", label: "seasons" },
+    { value: "9", label: "champions" },
+    { value: "400+", label: "races" }
+  ],
+
+  labels: {
+    tabs: ["Chapters", "Hall of fame", "Rivalries"],
+    chaptersHint: "Swipe the stories, tap a chapter, or watch them back to back.",
+    playAll: "Play stories",
+    watchStory: "Watch as story",
+    shareChapter: "Share chapter",
+    copied: "Copied to clipboard!",
+    copyFailed: "Couldn’t copy. Select the address bar to share.",
+    linkMissing: "Add your link in CONFIG.navLinks",
+    openFull: "Open full chapter",
+    prev: "Previous",
+    next: "Next",
+    chapterCount: "Chapter",
+    factLabel: "Did you know?",
+    paused: "Paused",
+    peopleTitle: "Hall of fame",
+    peopleIntro: "The drivers who built this league. Open a card for the full story.",
+    searchPlaceholder: "Search name, nation or titles — try “2 titles”",
+    searchLabel: "Search the hall of fame",
+    searchCount: "Showing {n} of {total}",
+    searchEmpty: "No drivers match “{q}”",
+    clearSearch: "Clear search",
+    sortDebut: "By debut",
+    sortHonours: "Most titles",
+    honourOne: "title",
+    honourMany: "titles",
+    honoursHeading: "Championship years",
+    tagsHeading: "Teams",
+    momentLabel: "Defining moment",
+    rivalriesTitle: "Rivalries",
+    rivalriesIntro: "The feuds that decided championships, rated by how hot they got.",
+    heat: "Heat",
+    flashpoint: "Flashpoint",
+    outcome: "How it ended"
+  },
+
+  chapters: [
+    { short:"S1", label:"Garage days", years:"2016–2017", big:"2016",
+      title:"Twelve friends and a Discord server",
+      tagline:"One car, one class, zero stewards.",
+      body:"The league began as a Sunday-night race between twelve friends who met in public lobbies. Grids were small, the rulebook fit on one page and every incident was settled with a vote. By the end of the second season, word had spread and the waiting list was longer than the grid.",
+      specs:[{ label:"Format", value:"Single class, 30-minute sprints" }, { label:"Signature car", value:"Spec GT3" }],
+      stats:[{ v:"12", l:"drivers on the very first grid" }, { v:"1", l:"page in the original rulebook" }],
+      list:{ title:"Champions", items:[["2016","Lena Voss"],["2017","Tomas Arcieri"]], empty:"" },
+      fact:"The first race was abandoned after nine laps when the host’s internet dropped. It was re-run the following week." },
+
+    { short:"S3", label:"Going long", years:"2018–2019", big:"2018",
+      title:"The endurance years",
+      tagline:"Driver swaps, night stints and a lot of coffee.",
+      body:"The league added endurance rounds with two-driver teams, which turned rivals into teammates and teammates into rivals. Lena Voss won another title in 2018, but the six-hour finale of 2019 belonged to a newcomer who drove the final four hours alone.",
+      specs:[{ label:"Format", value:"Sprints plus three endurance rounds" }, { label:"Signature car", value:"LMP2-style prototype" }],
+      stats:[{ v:"6h", l:"length of the 2019 season finale" }, { v:"24", l:"drivers on a full grid" }],
+      list:{ title:"Champions", items:[["2018","Lena Voss"],["2019","Mateo Ruiz"]], empty:"" },
+      fact:"Mateo Ruiz’s co-driver lost power during his stint in the 2019 finale. Ruiz stayed in the car for the rest of the race." },
+
+    { short:"S5", label:"Open grid", years:"2020", big:"2020",
+      title:"The year everyone joined",
+      tagline:"Lockdown filled the waiting list overnight.",
+      body:"When real-world racing stopped, sim racing exploded. The league opened a second split, introduced a stewarding panel and started streaming every round. Kai Nakamura, a rookie from the qualifying races, won the title in his first full season.",
+      specs:[{ label:"Format", value:"Two splits, promotion and relegation" }, { label:"Signature car", value:"Spec GT3" }],
+      stats:[{ v:"3×", l:"growth in registered drivers in one season" }, { v:"18", l:"rounds streamed live" }],
+      list:{ title:"Champions", items:[["2020","Kai Nakamura"]], empty:"" },
+      fact:"The 2020 season opener drew more live viewers than the previous four seasons combined." },
+
+    { short:"S6", label:"Pro era", years:"2021–2022", big:"2021",
+      title:"Sponsors, liveries and pressure",
+      tagline:"The hobby started to look like a job.",
+      body:"Teams signed sponsors, designed proper liveries and ran practice programmes. The racing got tighter and tempers got shorter. Ines Carvalho won in 2021 on consistency alone, without a single race victory until the final round.",
+      specs:[{ label:"Format", value:"Team championship added" }, { label:"Signature car", value:"Open-wheel F3-style" }],
+      stats:[{ v:"0.08s", l:"average gap between the top three in 2022 qualifying" }, { v:"1", l:"win for the 2021 champion — in the finale" }],
+      list:{ title:"Champions", items:[["2021","Ines Carvalho"],["2022","Kai Nakamura"]], empty:"" },
+      fact:"The team championship was decided on a tie-break: number of second places." },
+
+    { short:"S8", label:"Split grids", years:"2023–2024", big:"2023",
+      title:"Two leagues in one",
+      tagline:"A pro split and an academy for new drivers.",
+      body:"The league separated into a pro split and an academy, with the top academy drivers promoted every season. Oskar Lindqvist and Dev Malhotra, both academy graduates, won back-to-back titles.",
+      specs:[{ label:"Format", value:"Pro split and academy" }, { label:"Signature car", value:"Open-wheel F2-style" }],
+      stats:[{ v:"2", l:"academy graduates who went on to win the title" }, { v:"40", l:"drivers across both splits" }],
+      list:{ title:"Champions", items:[["2023","Oskar Lindqvist"],["2024","Dev Malhotra"]], empty:"" },
+      fact:"Dev Malhotra was promoted from the academy only twelve months before winning the pro title." },
+
+    { short:"S10", label:"Season ten", years:"2025–now", big:"2025",
+      title:"Ten seasons in",
+      tagline:"The tenth anniversary season and the next chapter.",
+      body:"Season ten brought back the original Spec GT3 for one anniversary round, raced by every past champion. Sam Adeyemi took the 2025 title, and the current season is still being written.",
+      specs:[{ label:"Format", value:"Pro split, academy and endurance cup" }, { label:"Signature car", value:"Next-gen open-wheel" }],
+      stats:[{ v:"9", l:"past champions on one grid for the anniversary round" }, { v:"10", l:"seasons since the first race" }],
+      list:{ title:"Champions", items:[["2025","Sam Adeyemi"]], empty:"The current season is still running." },
+      fact:"The anniversary round was won by Lena Voss, the league’s first champion." }
+  ],
+
+  people: [
+    { id:"voss", first:"Lena", last:"Voss", nick:"The Founder", meta:"Germany", years:"2016–2021", debut:2016,
+      helmet:["#E10600","#ffffff"], honours:[2016,2018], stats:[["2","Titles"],["41","Wins"],["37","Poles"]],
+      tags:["Nordschleife Racing","Voss Motorsport"],
+      quote:{ text:"Drive the race you can win, not the one you want to win.", ctx:"Post-race stream, 2018" },
+      bio:"Founded the league with eleven friends and won its first championship. Retired from full-time racing in 2021 but still runs the stewarding panel." },
+    { id:"arcieri", first:"Tomas", last:"Arcieri", nick:"Toto", meta:"Argentina", years:"2016–2023", debut:2016,
+      helmet:["#6ec6ff","#ffffff"], honours:[2017], stats:[["1","Title"],["29","Wins"],["112","Starts"]],
+      tags:["Pampas Racing"],
+      moment:"Beat Lena Voss to the 2017 title by a single point at the last round.",
+      bio:"Aggressive, loud and loved by viewers. His feud with Voss defined the league’s early years." },
+    { id:"ruiz", first:"Mateo", last:"Ruiz", nick:"Iron Man", meta:"Spain", years:"2018–2024", debut:2018,
+      helmet:["#ffcc00","#c8102e"], honours:[2019], stats:[["1","Title"],["17","Wins"],["4h","Solo stint"]],
+      tags:["Rojo Endurance","Pampas Racing"],
+      moment:"Drove the final four hours of the 2019 six-hour finale alone to clinch the title.",
+      bio:"The league’s endurance specialist, famous for never asking for a driver swap." },
+    { id:"nakamura", first:"Kai", last:"Nakamura", nick:"The Rookie", meta:"Japan", years:"2020–now", debut:2020,
+      helmet:["#ffffff","#1e2a78"], honours:[2020,2022], stats:[["2","Titles"],["33","Wins"],["40","Poles"]],
+      tags:["Shinjuku Sim","Apex Works"],
+      quote:{ text:"I just tried to make no mistakes. Everyone else made one.", ctx:"After winning the 2020 title" },
+      bio:"Came through the qualifying races and won the title as a rookie. Holds the league record for poles." },
+    { id:"carvalho", first:"Ines", last:"Carvalho", nick:"Metronome", meta:"Portugal", years:"2020–now", debut:2020,
+      helmet:["#00843d","#E10600"], honours:[2021], stats:[["1","Title"],["9","Wins"],["58","Podiums"]],
+      tags:["Atlântico Racing"],
+      moment:"Won the 2021 title with just one race win, scored in the final round.",
+      bio:"The most consistent driver the league has seen, rarely fast enough to win and never slow enough to lose." },
+    { id:"lindqvist", first:"Oskar", last:"Lindqvist", nick:"Ice", meta:"Sweden", years:"2022–now", debut:2022,
+      helmet:["#0b5cad","#ffd23f"], honours:[2023], stats:[["1","Title"],["14","Wins"],["21","Poles"]],
+      tags:["Academy","Nordic Sim Team"],
+      moment:"First academy graduate to win the pro title.",
+      bio:"Promoted from the academy in 2022 and champion a year later." },
+    { id:"malhotra", first:"Dev", last:"Malhotra", nick:"DM", meta:"India", years:"2023–now", debut:2023,
+      helmet:["#ff6a00","#ffffff"], honours:[2024], stats:[["1","Title"],["11","Wins"],["12mo","Academy to title"]],
+      tags:["Academy","Apex Works"],
+      quote:{ text:"Academy taught me patience. Pro taught me to forget it.", ctx:"Championship stream, 2024" },
+      bio:"Went from academy rookie to pro champion in twelve months." },
+    { id:"adeyemi", first:"Sam", last:"Adeyemi", nick:"Sunday Sam", meta:"Nigeria", years:"2021–now", debut:2021,
+      helmet:["#7a3cff","#00d1b2"], honours:[2025], stats:[["1","Title"],["19","Wins"],["6","Wins in 2025"]],
+      tags:["Lagos Velocity"],
+      moment:"Won the tenth-anniversary championship in 2025.",
+      bio:"A fan favourite for his late-braking overtakes, finally rewarded with a title in season ten." }
+  ],
+
+  rivalries: [
+    { years:"2016–2018", heat:9, title:"Founders at war",
+      a:{ first:"Lena", last:"Voss", team:"Voss Motorsport" }, b:{ first:"Tomas", last:"Arcieri", team:"Pampas Racing" },
+      context:"The league’s founder against its loudest driver.",
+      stats:[["Titles, 2016–18",2,1],["Wins, 2016–18",22,19],["Head-to-head finishes",31,26]],
+      flash:"The 2017 finale: contact at the final chicane sent Voss into the gravel and handed Arcieri the title.",
+      outcome:"Voss won the 2018 title and they co-commentated the anniversary round in 2025." },
+    { years:"2020–2022", heat:7, title:"Speed versus consistency",
+      a:{ first:"Kai", last:"Nakamura", team:"Shinjuku Sim" }, b:{ first:"Ines", last:"Carvalho", team:"Atlântico Racing" },
+      context:"The league’s fastest driver against its most consistent one.",
+      stats:[["Titles, 2020–22",2,1],["Wins, 2020–22",24,4],["Podiums, 2020–22",38,44]],
+      flash:"2021: Nakamura won eight races but lost the title to Carvalho’s run of podiums.",
+      outcome:"Nakamura took the title back in 2022 by finishing every race." },
+    { years:"2023–2024", heat:8, title:"Academy classmates",
+      a:{ first:"Oskar", last:"Lindqvist", team:"Nordic Sim Team" }, b:{ first:"Dev", last:"Malhotra", team:"Apex Works" },
+      context:"Promoted together, and never willing to give each other an inch.",
+      stats:[["Titles, 2023–24",1,1],["Wins, 2023–24",12,10],["Poles, 2023–24",15,8]],
+      flash:"A wheel-to-wheel battle through the 2024 season finale’s final five laps.",
+      outcome:"Malhotra held on by 0.2 seconds to win the race and the title." },
+    { years:"2025", heat:6, title:"The anniversary decider",
+      a:{ first:"Sam", last:"Adeyemi", team:"Lagos Velocity" }, b:{ first:"Kai", last:"Nakamura", team:"Apex Works" },
+      context:"A fan favourite chasing a first title against a two-time champion.",
+      stats:[["Points, 2025",286,271],["Wins, 2025",6,5]],
+      flash:"Adeyemi passed Nakamura around the outside at the final round’s first corner.",
+      outcome:"Adeyemi won the tenth-anniversary title by 15 points." }
+  ]
+};
+
+/* ======================================================================
+   ENGINE — you shouldn’t need to edit below this line.
+   Sandbox-safe: no localStorage, sessionStorage, cookies, window.parent
+   or cross-origin frame access. All state is held in memory.
+   ====================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const L = CONFIG.labels;
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } })();
+const state = { tab: 0, ch: 0, seen: new Set([0]), sort: 'debut', query: '', subscribed: false, subscribers: [] };
+const HASHES = ['chapters', 'hall-of-fame', 'rivalries'];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const fill = (str, map) => str.replace(/\{(\w+)\}/g, (_, k) => map[k] ?? '');
+
+/* Safe URL helpers — history/location writes can throw SecurityError in sandboxed iframes */
+function readHash() { try { return decodeURIComponent((location.hash || '').slice(1)); } catch { return ''; } }
+function writeHash(h) { try { if (readHash() !== h) history.replaceState(null, '', '#' + h); } catch { /* sandboxed: keep state in memory only */ } }
+function pageUrl(hash) {
+  let base = '';
+  try { base = location.href.split('#')[0]; } catch { base = ''; }
+  if (!/^https?:/i.test(base)) base = base || '';
+  return base + '#' + hash;
+}
+
+/* Toast */
+let toastTimer = 0;
+function toast(msg, icon = 'fa-circle-check') {
+  const t = $('#toast');
+  t.querySelector('i').className = `fa-solid ${icon}`;
+  $('#toast-text').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* Clipboard with sandbox-safe fallbacks */
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+  } catch { /* blocked by permissions policy — fall through */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-1000px;left:-1000px;opacity:0';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    ta.remove(); return ok;
+  } catch { return false; }
+}
+
+/* Theme + static text */
+function hexToRgb(hex) {
+  const h = String(hex).replace('#', ''), f = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  const n = parseInt(f, 16); return isNaN(n) ? '225,6,0' : `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+function applyTheme() {
+  const r = document.documentElement.style;
+  r.setProperty('--accent', CONFIG.theme.accent);
+  r.setProperty('--accent-rgb', hexToRgb(CONFIG.theme.accent));
+  r.setProperty('--bg', CONFIG.theme.background);
+  $('meta[name="theme-color"]').content = CONFIG.theme.background;
+}
+function applyText() {
+  document.title = CONFIG.site.name;
+  $('meta[name="description"]').content = CONFIG.site.tagline;
+  $('meta[property="og:title"]').content = CONFIG.site.name;
+  $('meta[property="og:description"]').content = CONFIG.site.tagline;
+  $('#site-name').textContent = CONFIG.site.name;
+  $('#site-tagline').textContent = CONFIG.site.tagline;
+  $('#footer').textContent = CONFIG.site.footer;
+  $('#header-stats').innerHTML = CONFIG.headerStats.map(s => `<span class="meta-pill"><b>${esc(s.value)}</b>${esc(s.label)}</span>`).join('');
+  L.tabs.forEach((t, i) => $(`#tab-${i}`).textContent = t);
+  $('#chapters-hint').textContent = L.chaptersHint;
+  $('#play-all-label').textContent = L.playAll;
+  $('#people-title').textContent = L.peopleTitle;
+  $('#people-intro').textContent = L.peopleIntro;
+  $('#sort-debut').textContent = L.sortDebut;
+  $('#sort-honours').textContent = L.sortHonours;
+  $('#people-search').placeholder = L.searchPlaceholder;
+  $('#people-search').setAttribute('aria-label', L.searchLabel);
+  $('#search-clear').setAttribute('aria-label', L.clearSearch);
+  $('#people-empty-clear').textContent = L.clearSearch;
+  $('#riv-title').textContent = L.rivalriesTitle;
+  $('#riv-intro').textContent = L.rivalriesIntro;
+  $('#paused-hint').textContent = L.paused;
+  $('#intro-text').textContent = CONFIG.intro.text;
+  $('#intro-skip').textContent = CONFIG.intro.skipText;
+}
+function replayRise(c) { $$('.rise', c).forEach(el => { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; }); }
+
+/* Top navigation pills */
+function renderNavLinks() {
+  $('#nav-links').innerHTML = (CONFIG.navLinks || []).map((n, i) => `
+    <a class="nav-pill ${n.mobile === false ? 'hidden sm:inline-flex' : ''}" data-nav-link="${i}"
+       href="${n.url ? esc(n.url) : '#'}" ${n.url ? 'target="_blank" rel="noopener noreferrer"' : ''} aria-label="${esc(n.label)}">
+      <i class="${esc(n.icon)}" aria-hidden="true"></i>
+      <span class="sm:hidden">${esc(n.shortLabel || n.label)}</span><span class="hidden sm:inline">${esc(n.label)}</span>
+    </a>`).join('');
+}
+$('#nav-links').addEventListener('click', e => {
+  const a = e.target.closest('[data-nav-link]'); if (!a) return;
+  if (!CONFIG.navLinks[+a.dataset.navLink].url) { e.preventDefault(); toast(L.linkMissing, 'fa-circle-info'); }
+});
+
+/* Tabs + deep links (#chapters, #hall-of-fame, #rivalries, #chapter-3) */
+const tabs = $$('.tab'), panels = [$('#panel-0'), $('#panel-1'), $('#panel-2')];
+function setTab(i, { focus = false, push = true } = {}) {
+  if (i < 0 || i > 2) return;
+  state.tab = i;
+  tabs.forEach((t, k) => { t.setAttribute('aria-selected', k === i); t.tabIndex = k === i ? 0 : -1; });
+  $('#tab-ind').style.transform = `translateX(${i * 100}%)`;
+  panels.forEach((p, k) => p.hidden = k !== i);
+  replayRise(panels[i]);
+  if (i === 2) animateTugs();
+  if (focus) tabs[i].focus();
+  if (push) writeHash(i === 0 ? `chapter-${state.ch + 1}` : HASHES[i]);
+}
+tabs.forEach((t, i) => {
+  t.addEventListener('click', () => setTab(i));
+  t.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') setTab((i + 1) % 3, { focus: true });
+    if (e.key === 'ArrowLeft') setTab((i + 2) % 3, { focus: true });
+  });
+});
+function routeFromHash() {
+  const h = readHash(), m = h.match(/^chapter-(\d+)$/);
+  if (m) { selectChapter(+m[1] - 1, false); setTab(0, { push: false }); return; }
+  const i = HASHES.indexOf(h); if (i > -1) setTab(i, { push: false });
+}
+window.addEventListener('hashchange', routeFromHash);
+(() => {
+  let sx = 0, sy = 0, on = false; const area = $('#panels');
+  area.addEventListener('touchstart', e => { on = !e.target.closest('.rail, input, .field'); sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  area.addEventListener('touchend', e => {
+    if (!on) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 1.6) setTab(state.tab + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+})();
+
+/* Chapters */
+const CH = CONFIG.chapters;
+function renderRail() {
+  $('#rail').innerHTML = CH.map((c, i) => `
+    <button class="bubble" role="tab" data-i="${i}" aria-selected="${i === state.ch}" aria-controls="chapter" aria-label="${esc(c.label)}, ${esc(c.years)}">
+      <span class="ring ${state.seen.has(i) && i !== state.ch ? 'seen' : ''}"><span class="ring-inner">${esc(c.short)}</span></span>
+      <span class="bubble-label">${esc(c.label)}</span>
+    </button>`).join('');
+}
+function selectChapter(i, scroll = true) {
+  state.ch = Math.max(0, Math.min(CH.length - 1, i)); state.seen.add(state.ch);
+  renderRail(); renderChapter();
+  if (state.tab === 0) writeHash(`chapter-${state.ch + 1}`);
+  if (scroll) centerBubble(state.ch);
+}
+function centerBubble(i) {
+  const rail = $('#rail'), b = $(`.bubble[data-i="${i}"]`); if (!b) return;
+  const left = b.offsetLeft - (rail.clientWidth - b.offsetWidth) / 2;
+  rail.scrollTo({ left, behavior: reduceMotion ? 'auto' : 'smooth' });
+}
+// Drag-to-scroll with the mouse (touch uses native momentum scrolling)
+(() => {
+  const rail = $('#rail'); let down = false, moved = false, sx = 0, sl = 0;
+  rail.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0) return; down = true; moved = false; sx = e.clientX; sl = rail.scrollLeft; });
+  window.addEventListener('pointermove', e => {
+    if (!down) return; const dx = e.clientX - sx;
+    if (!moved && Math.abs(dx) > 5) { moved = true; rail.classList.add('dragging'); }
+    if (moved) rail.scrollLeft = sl - dx;
+  });
+  window.addEventListener('pointerup', () => { if (!down) return; down = false; rail.classList.remove('dragging'); });
+  rail.addEventListener('click', e => { if (moved) { e.stopImmediatePropagation(); e.preventDefault(); moved = false; } }, true);
+  rail.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { rail.scrollLeft += e.deltaY; } }, { passive: true });
+})();
+$('#rail').addEventListener('click', e => { const b = e.target.closest('.bubble'); if (b) selectChapter(+b.dataset.i); });
+$('#rail').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  e.preventDefault(); selectChapter(state.ch + (e.key === 'ArrowRight' ? 1 : -1)); $(`.bubble[data-i="${state.ch}"]`).focus();
+});
+
+function renderChapter() {
+  const c = CH[state.ch], i = state.ch, items = (c.list && c.list.items) || [];
+  const list = items.length
+    ? `<ol class="list">${items.map(([y, n]) => `<li><span>${esc(y)}</span><span>${esc(n)}</span></li>`).join('')}</ol>`
+    : `<p class="text-[15px] text-zinc-400">${esc(c.list && c.list.empty)}</p>`;
+  $('#chapter').innerHTML = `
+    <article class="glass relative overflow-hidden rounded-[28px] p-5 sm:p-8">
+      <span class="ghost" aria-hidden="true">${esc(c.big)}</span>
+      <div class="relative grid gap-8 md:grid-cols-[1.25fr_1fr]">
+        <div>
+          <p class="rise flex flex-wrap items-center gap-2.5 text-[14px] text-zinc-400" style="--i:0">${esc(L.chapterCount)} ${i + 1} of ${CH.length} <span class="pill">${esc(c.years)}</span></p>
+          <h2 class="rise mt-3 text-[34px] sm:text-[48px] font-black leading-[1.02] tracking-tight max-w-[14ch]" style="--i:1">${esc(c.title)}</h2>
+          <p class="rise mt-3 text-[18px] font-semibold text-zinc-200" style="--i:2">${esc(c.tagline)}</p>
+          <p class="rise mt-4 text-[16px] leading-[1.7] text-zinc-300 max-w-[62ch]" style="--i:3">${esc(c.body)}</p>
+          <div class="rise mt-5 flex flex-wrap gap-2" style="--i:4">${(c.specs || []).map(s => `<span class="chip"><small>${esc(s.label)}</small>${esc(s.value)}</span>`).join('')}</div>
+          <div class="rise mt-5 grid grid-cols-2 gap-3" style="--i:5">${(c.stats || []).map(s => `<div class="stat"><div class="stat-v">${esc(s.v)}</div><div class="stat-l">${esc(s.l)}</div></div>`).join('')}</div>
+        </div>
+        <div class="flex flex-col gap-5">
+          <div class="rise" style="--i:4"><h3 class="text-[18px] font-bold mb-2">${esc(c.list && c.list.title)}</h3>${list}</div>
+          ${c.fact ? `<aside class="fact rise" style="--i:6"><strong>${esc(L.factLabel)}</strong>${esc(c.fact)}</aside>` : ''}
+        </div>
+      </div>
+      <div class="relative mt-7 flex flex-wrap items-center gap-2">
+        <button class="btn" data-nav="-1" ${i === 0 ? 'disabled' : ''} aria-label="${esc(L.prev)}"><i class="fa-solid fa-chevron-left text-[12px]" aria-hidden="true"></i><span class="hidden sm:inline">${esc(L.prev)}</span></button>
+        <button class="btn" data-nav="1" ${i === CH.length - 1 ? 'disabled' : ''} aria-label="${esc(L.next)}"><span class="hidden sm:inline">${esc(L.next)}</span><i class="fa-solid fa-chevron-right text-[12px]" aria-hidden="true"></i></button>
+        <button class="btn" data-share><i class="fa-solid fa-share-nodes" aria-hidden="true"></i>${esc(L.shareChapter)}</button>
+        <button class="btn btn-accent sm:ml-auto" data-story="${i}"><i class="fa-solid fa-play text-[12px]" aria-hidden="true"></i>${esc(L.watchStory)}</button>
+      </div>
+    </article>`;
+}
+$('#chapter').addEventListener('click', async e => {
+  const n = e.target.closest('[data-nav]'); if (n) return selectChapter(state.ch + +n.dataset.nav);
+  const s = e.target.closest('[data-story]'); if (s) return openStory(+s.dataset.story);
+  if (e.target.closest('[data-share]')) {
+    const c = CH[state.ch];
+    const text = `${c.title} — ${CONFIG.site.name}\n${pageUrl(`chapter-${state.ch + 1}`)}`;
+    const ok = await copyText(text);
+    toast(ok ? L.copied : L.copyFailed, ok ? 'fa-circle-check' : 'fa-circle-exclamation');
+  }
+});
+
+/* Newsletter */
+function renderNewsletter() {
+  const N = CONFIG.newsletter, box = $('#newsletter');
+  if (!N || !N.enabled) { box.hidden = true; return; }
+  box.innerHTML = state.subscribed ? `
+    <div class="cta glass p-6 sm:p-8 flex items-center gap-4 rise">
+      <span class="w-12 h-12 shrink-0 grid place-items-center rounded-full" style="background:rgba(var(--accent-rgb),.18);border:1px solid rgba(var(--accent-rgb),.5)"><i class="fa-solid fa-check text-[18px]" aria-hidden="true"></i></span>
+      <div class="relative"><p class="text-[20px] font-black">${esc(N.success)}</p><p class="text-[15px] text-zinc-300">${esc(N.successNote)}</p></div>
+    </div>` : `
+    <div class="cta glass p-6 sm:p-8">
+      <div class="relative grid gap-5 md:grid-cols-[1fr_1.1fr] md:items-center">
+        <div>
+          <p class="flex items-center gap-2 text-[22px] sm:text-[26px] font-black leading-tight"><i class="fa-solid fa-envelope-open-text" style="color:var(--accent)" aria-hidden="true"></i>${esc(N.title)}</p>
+          <p class="mt-1 text-[15px] text-zinc-300 max-w-[46ch]">${esc(N.text)}</p>
+        </div>
+        <form id="nl-form" novalidate ${N.formAction ? `action="${esc(N.formAction)}" method="post" target="_blank"` : ''}>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <label class="field flex-1" for="nl-email">
+              <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+              <input id="nl-email" name="${esc(N.fieldName || 'email')}" type="email" inputmode="email" autocomplete="email" placeholder="${esc(N.placeholder)}" aria-label="Email address" aria-describedby="nl-error" required>
+            </label>
+            <button class="btn btn-accent h-12 px-6" type="submit">${esc(N.button)}<i class="fa-solid fa-arrow-right text-[12px]" aria-hidden="true"></i></button>
+          </div>
+          <p class="field-error" id="nl-error" role="alert"></p>
+        </form>
+      </div>
+    </div>`;
+  const form = $('#nl-form'); if (!form) return;
+  form.addEventListener('submit', e => {
+    const input = $('#nl-email'), email = input.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      e.preventDefault(); $('#nl-error').textContent = N.invalid; input.focus(); return;
+    }
+    if (!N.formAction) e.preventDefault();      // demo mode: nothing leaves the page
+    state.subscribers.push(email);              // in-memory only
+    state.subscribed = true;
+    toast(N.success);
+    setTimeout(renderNewsletter, N.formAction ? 50 : 0);
+  });
+  $('#nl-email').addEventListener('input', () => $('#nl-error').textContent = '');
+}
+
+/* Hall of fame — search, sort, render */
+const P = CONFIG.people;
+const honourWord = n => n === 1 ? L.honourOne : L.honourMany;
+const IGNORE = new Set(['title', 'titles', 'champion', 'champions', 'championship', 'championships', 'x', 'from']);
+function matches(d, q) {
+  if (!q) return true;
+  const n = (d.honours || []).length;
+  const hay = [d.first, d.last, `${d.first} ${d.last}`, d.nick, d.meta, ...(d.tags || []), ...(d.honours || []).map(String)].join(' | ').toLowerCase();
+  return q.toLowerCase().split(/\s+/).filter(Boolean).every(t => {
+    if (IGNORE.has(t)) return true;
+    if (/^\d{1,2}$/.test(t)) return n === +t;            // "2" or "2 titles" → exact title count
+    const plus = t.match(/^(\d{1,2})\+$/); if (plus) return n >= +plus[1];  // "2+" → at least two
+    return hay.includes(t);                               // name, nickname, nation, team, title year
+  });
+}
+function hl(text, q) {
+  const terms = q.toLowerCase().split(/\s+/).filter(t => t && !IGNORE.has(t) && !/^\d{1,2}\+?$/.test(t));
+  let out = esc(text);
+  terms.forEach(t => { const re = new RegExp(`(${esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig'); out = out.replace(re, '<mark>$1</mark>'); });
+  return out;
+}
+function renderPeople(animate = true) {
+  const q = state.query.trim();
+  const list = P.filter(d => matches(d, q)).sort(state.sort === 'honours'
+    ? (a, b) => (b.honours || []).length - (a.honours || []).length || a.debut - b.debut
+    : (a, b) => a.debut - b.debut);
+  $('#people').innerHTML = list.map((d, k) => {
+    const n = (d.honours || []).length;
+    return `<button class="spot glass person ${animate ? 'rise' : ''}" style="--i:${k}" data-id="${esc(d.id)}" aria-label="${esc(d.first)} ${esc(d.last)}">
+      <span class="flex items-start justify-between gap-3 w-full">
+        <span class="helmet" style="--c1:${esc(d.helmet[0])};--c2:${esc(d.helmet[1])}" aria-hidden="true"></span>
+        <span class="text-right"><span class="block text-[30px] font-black leading-none">${n}</span><span class="block text-[13px] text-zinc-400">${esc(honourWord(n))}</span></span>
+      </span>
+      <span><span class="first">${hl(d.first, q)}</span><span class="last">${hl(d.last, q)}</span><span class="block mt-1 text-[14px] text-zinc-400">${hl(d.meta, q)}, ${esc(d.years)}</span></span>
+      <span class="pips" aria-hidden="true">${'<i></i>'.repeat(n)}</span>
+      <span class="mini">${(d.stats || []).map(([v, l]) => `<div><b>${esc(v)}</b>${esc(l)}</div>`).join('')}</span>
+    </button>`;
+  }).join('');
+  $('#people-count').textContent = q ? fill(L.searchCount, { n: list.length, total: P.length }) : '';
+  $('#people-empty').hidden = list.length > 0;
+  $('#people-empty-title').textContent = fill(L.searchEmpty, { q });
+  $('#search-clear').hidden = !q;
+}
+const search = $('#people-search');
+search.addEventListener('input', () => { state.query = search.value; renderPeople(false); });
+search.addEventListener('keydown', e => { if (e.key === 'Escape' && search.value) { e.stopPropagation(); clearSearch(); } });
+function clearSearch() { search.value = ''; state.query = ''; renderPeople(false); search.focus(); }
+$('#search-clear').addEventListener('click', e => { e.preventDefault(); clearSearch(); });
+$('#people-empty-clear').addEventListener('click', clearSearch);
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && state.tab === 1 && document.activeElement !== search && !$('.modal.show') && !/input|textarea/i.test(document.activeElement.tagName)) { e.preventDefault(); search.focus(); }
+});
+$$('.sort-btn').forEach(b => b.addEventListener('click', () => {
+  state.sort = b.dataset.sort; $$('.sort-btn').forEach(x => x.setAttribute('aria-pressed', x === b)); renderPeople();
+}));
+$('#people').addEventListener('click', e => { const c = e.target.closest('.person'); if (c) openPerson(c.dataset.id, c); });
+
+function openPerson(id, origin) {
+  const d = P.find(x => x.id === id);
+  const voice = d.quote ? `<blockquote class="quote"><p>${esc(d.quote.text)}</p><small>${esc(d.quote.ctx)}</small></blockquote>`
+    : d.moment ? `<div class="fact mt-6"><strong>${esc(L.momentLabel)}</strong>${esc(d.moment)}</div>` : '';
+  $('#sheet-body').innerHTML = `
+    <div class="flex items-start gap-4">
+      <span class="helmet lg" style="--c1:${esc(d.helmet[0])};--c2:${esc(d.helmet[1])}" aria-hidden="true"></span>
+      <div class="flex-1 min-w-0">
+        <span class="first">${esc(d.first)}</span>
+        <h2 id="sheet-title" class="text-[34px] sm:text-[40px] font-black leading-none tracking-tight">${esc(d.last)}</h2>
+        <p class="mt-1 text-[14px] text-zinc-400">${d.nick ? `“${esc(d.nick)}”, ` : ''}${esc(d.meta)}, ${esc(d.years)}</p>
+      </div>
+      <button class="x" data-close aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    </div>
+    <div class="mt-6 grid grid-cols-3 gap-3">${(d.stats || []).map(([v, l]) => `<div class="stat"><div class="stat-v">${esc(v)}</div><div class="stat-l">${esc(l)}</div></div>`).join('')}</div>
+    ${voice}
+    <p class="mt-5 text-[16px] leading-[1.7] text-zinc-300">${esc(d.bio)}</p>
+    ${(d.honours || []).length ? `<h3 class="mt-6 mb-2 text-[16px] font-bold">${esc(L.honoursHeading)}</h3><div class="flex flex-wrap gap-2">${d.honours.map(t => `<span class="tag hot">${esc(t)}</span>`).join('')}</div>` : ''}
+    ${(d.tags || []).length ? `<h3 class="mt-5 mb-2 text-[16px] font-bold">${esc(L.tagsHeading)}</h3><div class="flex flex-wrap gap-2">${d.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}`;
+  openModal($('#sheet-modal'), origin);
+}
+
+/* Rivalries */
+function renderRivalries() {
+  $('#rivalries').innerHTML = CONFIG.rivalries.map((r, k) => `
+    <article class="glass spot rounded-[26px] p-5 sm:p-7 rise" style="--i:${k}">
+      <div class="flex items-center justify-between gap-3">
+        <span class="pill">${esc(r.years)}</span>
+        <span class="flex items-center gap-2 text-[13px] text-zinc-400"><i class="fa-solid fa-fire" style="color:var(--accent)" aria-hidden="true"></i>${esc(L.heat)}
+          <span class="heat" role="img" aria-label="${esc(L.heat)} ${r.heat} of 10">${Array.from({ length: 10 }, (_, j) => `<i class="${j < r.heat ? 'on' : ''}"></i>`).join('')}</span></span>
+      </div>
+      <div class="vs">
+        <div><p class="text-[14px] text-zinc-400">${esc(r.a.first)}</p><p class="vs-name">${esc(r.a.last)}</p><p class="text-[13px] text-zinc-500 mt-1">${esc(r.a.team)}</p></div>
+        <span class="vs-badge">vs</span>
+        <div class="text-right"><p class="text-[14px] text-zinc-400">${esc(r.b.first)}</p><p class="vs-name">${esc(r.b.last)}</p><p class="text-[13px] text-zinc-500 mt-1">${esc(r.b.team)}</p></div>
+      </div>
+      <h3 class="mt-5 text-[21px] font-bold">${esc(r.title)}</h3>
+      <p class="mt-1 text-[15px] leading-[1.6] text-zinc-300">${esc(r.context)}</p>
+      <div class="mt-5 grid gap-4">${(r.stats || []).map(([l, a, b]) => {
+        const t = a + b, pa = t ? (a / t) * 100 : 50;
+        return `<div class="tug"><span class="tug-label">${esc(l)}</span>
+          <span class="tug-val ${a >= b ? 'win' : ''}">${esc(a)}</span>
+          <span class="tug-bar" aria-hidden="true"><span class="l" data-w="${pa}" style="width:50%"></span><span class="r" data-w="${100 - pa}" style="width:50%"></span></span>
+          <span class="tug-val text-right ${b >= a ? 'win' : ''}">${esc(b)}</span></div>`;
+      }).join('')}</div>
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <div class="note"><h4>${esc(L.flashpoint)}</h4><p>${esc(r.flash)}</p></div>
+        <div class="note"><h4>${esc(L.outcome)}</h4><p>${esc(r.outcome)}</p></div>
+      </div>
+    </article>`).join('');
+}
+function animateTugs() {
+  const s = $$('#rivalries .tug-bar span'); s.forEach(x => x.style.width = '50%');
+  requestAnimationFrame(() => requestAnimationFrame(() => s.forEach(x => x.style.width = x.dataset.w + '%')));
+}
+
+/* Cursor glow */
+document.addEventListener('pointermove', e => {
+  const c = e.target.closest && e.target.closest('.spot'); if (!c) return;
+  const r = c.getBoundingClientRect(); c.style.setProperty('--x', `${e.clientX - r.left}px`); c.style.setProperty('--y', `${e.clientY - r.top}px`);
+}, { passive: true });
+
+/* Modals */
+let lastFocus = null;
+function openModal(m, origin) {
+  lastFocus = origin || document.activeElement; m.classList.add('show'); document.body.classList.add('lock');
+  requestAnimationFrame(() => requestAnimationFrame(() => m.classList.add('open')));
+  setTimeout(() => { const f = m.querySelector('.x'); f && f.focus(); }, 60);
+}
+function closeModal(m) {
+  if (!m.classList.contains('show')) return; m.classList.remove('open');
+  setTimeout(() => { m.classList.remove('show'); if (!$('.modal.show')) document.body.classList.remove('lock'); lastFocus && lastFocus.focus && lastFocus.focus(); }, reduceMotion ? 0 : 400);
+}
+$('#sheet-modal').addEventListener('click', e => { if (e.target.closest('[data-close]')) closeModal($('#sheet-modal')); });
+(() => {
+  const p = $('#sheet'); let y0 = 0, dy = 0, drag = false;
+  p.addEventListener('touchstart', e => { if (p.scrollTop > 0) return; drag = true; y0 = e.touches[0].clientY; dy = 0; p.style.transition = 'none'; }, { passive: true });
+  p.addEventListener('touchmove', e => { if (!drag) return; dy = Math.max(0, e.touches[0].clientY - y0); if (innerWidth < 768) p.style.transform = `translateY(${dy}px)`; }, { passive: true });
+  p.addEventListener('touchend', () => { if (!drag) return; drag = false; p.style.transition = ''; p.style.transform = ''; if (dy > 110 && innerWidth < 768) closeModal($('#sheet-modal')); });
+})();
+
+/* Story viewer */
+const story = { i: 0, p: 0, paused: false, raf: 0, last: 0, dur: 8000 };
+const frame = $('#story'), stage = $('#stage');
+function openStory(i = 0) {
+  $('#bars').innerHTML = CH.map(() => '<span class="bar"><i></i></span>').join('');
+  openModal($('#story-modal')); goStory(i);
+  story.paused = false; story.last = performance.now(); cancelAnimationFrame(story.raf); story.raf = requestAnimationFrame(tick);
+}
+function closeStory() { cancelAnimationFrame(story.raf); closeModal($('#story-modal')); selectChapter(story.i); }
+function goStory(i) {
+  if (i >= CH.length) { closeStory(); return; }
+  story.i = Math.max(0, i); story.p = 0; state.seen.add(story.i);
+  const c = CH[story.i];
+  $('#story-short').textContent = c.short; $('#story-label').textContent = c.label; $('#story-years').textContent = c.years;
+  stage.innerHTML = `
+    <span class="ghost" aria-hidden="true">${esc(c.big)}</span>
+    <div class="relative">
+      <h2 class="rise text-[clamp(30px,9vw,40px)] font-black leading-[1.02] tracking-tight" style="--i:0">${esc(c.title)}</h2>
+      <p class="rise mt-2 text-[17px] font-semibold text-zinc-200" style="--i:1">${esc(c.tagline)}</p>
+      <div class="rise mt-5 grid grid-cols-2 gap-3" style="--i:2">${(c.stats || []).map(s => `<div class="stat"><div class="stat-v" style="font-size:30px">${esc(s.v)}</div><div class="stat-l" style="font-size:13px">${esc(s.l)}</div></div>`).join('')}</div>
+      ${c.fact ? `<div class="fact rise mt-4" style="--i:3"><strong>${esc(L.factLabel)}</strong>${esc(c.fact)}</div>` : ''}
+      <button class="btn w-full mt-5" data-open>${esc(L.openFull)}</button>
+    </div>`;
+  paintBars();
+}
+function paintBars() { $$('#bars .bar i').forEach((el, k) => el.style.width = k < story.i ? '100%' : k > story.i ? '0%' : `${Math.min(story.p, 1) * 100}%`); }
+function tick(t) {
+  if (!story.paused && !reduceMotion) story.p += (t - story.last) / story.dur;
+  story.last = t; paintBars();
+  if (story.p >= 1) goStory(story.i + 1);
+  if ($('#story-modal').classList.contains('show')) story.raf = requestAnimationFrame(tick);
+}
+function setPaused(v) { story.paused = v; frame.classList.toggle('paused', v); }
+$('#story-close').addEventListener('click', closeStory);
+$('#story-modal').addEventListener('click', e => { if (e.target.classList.contains('backdrop')) closeStory(); });
+$('#play-all').addEventListener('click', () => openStory(0));
+stage.addEventListener('click', e => { if (e.target.closest('[data-open]')) { closeStory(); setTab(0); } });
+(() => {
+  let t0 = 0, x0 = 0, y0 = 0, hold = 0, held = false, down = false;
+  stage.addEventListener('pointerdown', e => {
+    if (e.target.closest('button')) return; down = true; held = false; t0 = Date.now(); x0 = e.clientX; y0 = e.clientY;
+    hold = setTimeout(() => { held = true; setPaused(true); }, 200);
+  });
+  stage.addEventListener('pointerup', e => {
+    if (!down) return; down = false; clearTimeout(hold);
+    const dx = e.clientX - x0, dy = e.clientY - y0; setPaused(false);
+    if (dy > 90 && Math.abs(dy) > Math.abs(dx)) return closeStory();
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) return goStory(story.i + (dx < 0 ? 1 : -1));
+    if (!held && Date.now() - t0 < 300) { const r = stage.getBoundingClientRect(); goStory(e.clientX - r.left < r.width / 3 ? story.i - 1 : story.i + 1); }
+  });
+  stage.addEventListener('pointercancel', () => { down = false; clearTimeout(hold); setPaused(false); });
+})();
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) setPaused(true);
+  else if ($('#story-modal').classList.contains('show')) { story.last = performance.now(); setPaused(false); }
+});
+document.addEventListener('keydown', e => {
+  if ($('#story-modal').classList.contains('show')) {
+    if (e.key === 'Escape') closeStory();
+    if (e.key === 'ArrowRight') goStory(story.i + 1);
+    if (e.key === 'ArrowLeft') goStory(story.i - 1);
+    if (e.key === ' ') { e.preventDefault(); setPaused(!story.paused); }
+    return;
+  }
+  if (e.key === 'Escape') closeModal($('#sheet-modal'));
+});
+
+/* Intro */
+function runIntro() {
+  const el = $('#intro'), pods = $$('.pod', el); let done = false;
+  const finish = () => { if (done) return; done = true; el.classList.add('done'); replayRise(panels[state.tab]); };
+  el.addEventListener('click', finish);
+  if (!CONFIG.intro.enabled || reduceMotion) { finish(); return; }
+  let k = 0;
+  const step = () => { if (done) return; if (k < pods.length) { pods[k++].classList.add('on'); setTimeout(step, 320); } else setTimeout(out, 500 + Math.random() * 600); };
+  const out = () => { if (done) return; pods.forEach(p => p.classList.remove('on')); $('#intro-text').classList.add('show'); setTimeout(finish, 750); };
+  setTimeout(step, 350);
+}
+
+/* Boot */
+applyTheme(); applyText(); renderNavLinks();
+renderRail(); renderChapter(); renderNewsletter(); renderPeople(); renderRivalries();
+setTab(0, { push: false });
+routeFromHash();
+runIntro();
+</script>
+</body>
+</html>
